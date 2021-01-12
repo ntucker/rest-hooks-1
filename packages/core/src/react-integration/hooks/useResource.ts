@@ -1,7 +1,10 @@
 import { ReadShape, ParamsFromShape } from '@rest-hooks/core/endpoint';
 import { Denormalize, DenormalizeNullable } from '@rest-hooks/endpoint';
 import { useDenormalized } from '@rest-hooks/core/state/selectors';
-import { StateContext } from '@rest-hooks/core/react-integration/context';
+import {
+  DenormalizeCacheContext,
+  StateContext,
+} from '@rest-hooks/core/react-integration/context';
 import { useMemo, useContext } from 'react';
 
 import useRetrieve from './useRetrieve';
@@ -27,10 +30,12 @@ function useOneResource<
   Denormalize<Shape['schema']>
 > {
   const state = useContext(StateContext);
+  const denormalizeCache = useContext(DenormalizeCacheContext);
   const [denormalized, ready, deleted] = useDenormalized(
     fetchShape,
     params,
     state,
+    denormalizeCache,
   );
   const error = useError(fetchShape, params, ready);
 
@@ -61,13 +66,14 @@ function useManyResources<A extends ResourceArgs<any, any>[]>(
   ...resourceList: A
 ) {
   const state = useContext(StateContext);
+  const denormalizeCache = useContext(DenormalizeCacheContext);
   const denormalizedValues = resourceList.map(
     <
       Shape extends ReadShape<any, any>,
       Params extends ParamsFromShape<Shape> | null
     >([fetchShape, params]: ResourceArgs<Shape, Params>) =>
       // eslint-disable-next-line react-hooks/rules-of-hooks
-      useDenormalized(fetchShape, params, state),
+      useDenormalized(fetchShape, params, state, denormalizeCache),
   );
   const errorValues = resourceList.map(
     <
